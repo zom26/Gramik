@@ -56,7 +56,7 @@ public class GramikBot {
         }
     }
 
-    public void sendMessage(String chatId, String text) {
+    public void sendMessage(long chatId, String text) {
         try {
             JsonNode jsonToSend = objectMapper.createObjectNode()
                     .put("chat_id", chatId)
