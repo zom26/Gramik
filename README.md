@@ -1,8 +1,10 @@
 # Gramik
-Java Telegram Bot Lib or something like that 
 
+It is something like a lib for Telegram bots on java.
 
-Simple example:
+# Example
+
+Bot returning your text messages:
 ``` java
 GramikBot bot = new GramikBot("BotToken");
 bot.registerFilter(UpdateFilters.COMMAND("/start"), (update) -> {
@@ -13,3 +15,9 @@ bot.registerFilter(UpdateFilters.TEXT_MESSAGE, (update) -> {
 });
 bot.infinityPolling();  
 ```
+
+# Types
+
+It is a package of types used in library to parse types returned by telegram bot api methods.
+
+Honestly, it was made by python script parsing telegram bot api page. 
