@@ -16,6 +16,21 @@ bot.registerFilter(UpdateFilters.TEXT_MESSAGE, (update) -> {
 bot.infinityPolling();  
 ```
 
+---
+
+Another example - this bot is counting your messages up to two :)
+
+``` java
+GramikBot bot = new GramikBot("BotToken");
+bot.registerMessageFilter(MessageFilters.TEXT_MESSAGE.and(MessageFilters.COMMAND("/count")), message -> {
+    bot.sendMessage(message.chat().id(), "Counting is started now. 1!");
+    bot.registerMessageOneTimeFilter(MessageFilters.ALWAYS,
+            (x) -> bot.sendMessage(message.chat().id(), "2!! Counting is ended."));
+});
+```
+
+Yes, he is damn, anyway I love him. 
+
 # Types
 
 It is a package of types used in library to parse types returned by telegram bot api methods.

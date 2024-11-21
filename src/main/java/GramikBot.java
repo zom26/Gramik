@@ -4,60 +4,85 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.*;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
+
 import types.*;
 
 public class GramikBot {
     private final String url;
-    private final Map<Predicate<Update>, Consumer<Update>> filterList = new LinkedHashMap<>();
+    private final FilterContainer filters = new FilterContainer();
+    private final FilterContainer oneTimeFilters = new FilterContainer();
     private final ExecutorService executor;
     private long lastUpdate = 0;
+    private final boolean showUnfilteredUpdates;
 
-    private final ObjectMapper objectMapper = new ObjectMapper(); // Jackson ObjectMapper
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
 
     public GramikBot(String botToken) {
-        this(botToken, 1);
+        this(botToken, 1, true);
     }
 
-    public GramikBot(String botToken, int threadsNumber) {
+    public GramikBot(String botToken, int threads) {
+        this(botToken, threads, true);
+    }
+
+    public GramikBot(String botToken, boolean showUnfilteredUpdates) {
+        this(botToken, 1, showUnfilteredUpdates);
+    }
+
+    public GramikBot(String botToken, int threadsNumber, boolean showUnfilteredUpdates) {
         this.executor = Executors.newFixedThreadPool(threadsNumber);
         this.url = "https://api.telegram.org/bot" + botToken + "/";
         Update[] arr = getUpdates();
         if (arr != null && arr.length > 0)
             this.lastUpdate = arr[arr.length - 1].updateId() + 1;
+        this.showUnfilteredUpdates = showUnfilteredUpdates;
     }
-//
-//    public void registerMessageFilter(Predicate<JsonNode> filter, Consumer<JsonNode> consumer) {
-//        registerFilter(jsonNode -> filter.test(messageGetter.apply(jsonNode)),
-//                jsonNode -> consumer.accept(messageGetter.apply(jsonNode)));
-//    }
+
+    public void registerMessageFilter(Predicate<Message> filter, Consumer<Message> consumer) {
+        this.filters.registerMessageFilter(filter, consumer);
+    }
 
     public void registerFilter(Predicate<Update> filter, Consumer<Update> consumer) {
-        this.filterList.put(filter, consumer);
+        this.filters.registerUpdateFilter(filter, consumer);
+    }
+
+    public void registerMessageOneTimeFilter(Predicate<Message> filter, Consumer<Message> consumer) {
+        this.oneTimeFilters.registerMessageFilter(filter, consumer);
+    }
+
+    public void registerOneTimeFilter(Predicate<Update> filter, Consumer<Update> consumer) {
+        this.oneTimeFilters.registerUpdateFilter(filter, consumer);
     }
 
     public Update[] getUpdates() {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(lastUpdate == 0 ? url + "getUpdates?" : url + "getUpdates?offset=" + lastUpdate)).GET().build();
+        Update[] updates = null;
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return objectMapper.readValue(parse(response.body()).get("result").toString(), Update[].class);
+            updates = objectMapper.readValue(parse(response.body()).get("result").toString(), Update[].class);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
+        }
+        if (updates != null) {
+            return updates;
+        } else {
+            throw new RuntimeException("SomethingWentWrongException");
         }
     }
 
     private JsonNode parse(String json) {
         try {
-            return objectMapper.readTree(json); // Используем Jackson для парсинга
+            return objectMapper.readTree(json);
         } catch (IOException e) {
             throw new RuntimeException("Error parsing JSON", e);
         }
@@ -86,23 +111,16 @@ public class GramikBot {
     public void infinityPolling() {
         while (true) {
             final Update[] updates = getUpdates();
-            if (updates != null && updates.length > 0)
-                lastUpdate = updates[updates.length - 1].updateId() + 1;
-            for (int i = 0; i < updates.length; i++) {
-                final Update update = updates[i];
+            if (updates == null || updates.length == 0) {
+                continue;
+            }
+            lastUpdate = updates[updates.length - 1].updateId() + 1;
+            for (final Update update : updates) {
                 executor.execute(() -> {
-                    for (Map.Entry<Predicate<Update>, Consumer<Update>> entry : filterList.entrySet()) {
-                        if (entry.getKey().test(update)) {
-                            entry.getValue().accept(update);
-                            break;
-                        }
+                    if (!oneTimeFilters.consumeAndRemove(update) && !filters.consume(update) && showUnfilteredUpdates) {
+                        System.err.println("Unfiltered update: " + update);
                     }
                 });
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
             }
         }
     }
