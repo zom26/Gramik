@@ -5,11 +5,11 @@ Java Telegram Bot Lib or something like that
 Simple example:
 ``` java
 GramikBot bot = new GramikBot("BotToken");
-bot.registerFilter(UpdatesFilters.commandFilter("/start"), (message) -> {
-    bot.sendMessage(message.get("message").get("chat").get("id").asLong(), "Hi! It's echo bot. :/ ");
+bot.registerFilter(UpdateFilters.COMMAND("/start"), (update) -> {
+    bot.sendMessage(update.message().chat().id(), "Ohae its echo bot. :/");
 });
-bot.registerFilter(UpdatesFilters.textMessageFilter(), (message) -> {
-    bot.sendMessage(message.get("message").get("chat").get("id").asLong(), message.get("message").get("text").asText());
+bot.registerFilter(UpdateFilters.TEXT_MESSAGE, (update) -> {
+    bot.sendMessage(update.message().chat().id(), update.message().text());
 });
-bot.infinityPolling();
+bot.infinityPolling();  
 ```
