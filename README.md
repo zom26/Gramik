@@ -117,7 +117,7 @@ It is simple bot witch can evaluate reversed polish expression got by bot or fro
 ``` java
 public class Test {
 
-    private static final GramikBot bot = new GramikBot("7347309134:AAGQrTxUoZBUOQCsaE5_Y_-0PvAdXYbc1wE");
+    private static final GramikBot bot = new GramikBot("BotToken");
 
     private static void evaluator(Message message) {
         BigInteger res = evaluate(message.text());
