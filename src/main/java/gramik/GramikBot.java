@@ -138,6 +138,27 @@ public class GramikBot {
         }
     }
 
+    public void forwardMessage(Message message, Long toChatId) {
+        try {
+            ObjectNode jsonToSend = objectMapper.createObjectNode()
+                    .put("chat_id", toChatId)
+                    .put("from_chat_id", message.chat().id())
+                    .put("message_id", message.messageId());
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url + "forwardMessage"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonToSend.toString()))
+                    .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new RuntimeException(response.body());
+            }
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void sendMessage(long chatId, String text, ParseMode mode, ReplyMarkup replyMarkup, ReplyParameters replyParameters, String businessConnectionId) {
         try {
             ObjectNode jsonToSend = objectMapper.createObjectNode()

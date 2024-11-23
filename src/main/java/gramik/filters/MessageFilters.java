@@ -21,5 +21,8 @@ public class MessageFilters {
     public static Predicate<Message> PATTERN(String pattern) {
         return x -> x.text().matches(pattern);
     }
+    public static Predicate<Message> USERNAME(String username) {
+        return x -> x.from().username().equals(username);
+    }
 
 }

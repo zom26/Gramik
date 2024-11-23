@@ -43,7 +43,7 @@ public class FilterContainer {
                 update.businessMessage() != null && anyMessagesFilters.consume(update.businessMessage(), remove) ||
                 update.message() != null && messagesFilters.consume(update.message(), remove) ||
                 update.channelPost() != null && anyMessagesFilters.consume(update.channelPost(), remove) ||
-                update.businessMessage() != null && messagesFilters.consume(update.businessMessage(), remove) ||
+                update.businessMessage() != null && businessMessagesFilters.consume(update.businessMessage(), remove) ||
                 updatesFilters.consume(update, remove);
     }
 

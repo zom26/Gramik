@@ -178,7 +178,29 @@ public class Test {
     }
 }
 ```
+---
+### ForwarderBot
 
+Bot can notify you about getting a message from an important user
+
+``` java
+public class Test {
+
+    private static final GramikBot bot = new GramikBot("BotToken");
+    private static final Long adminId = AdminId;
+
+    private static void addNewUser(Message message) {
+        System.out.println(message.text().substring(1));
+        bot.registerBusinessMessageFilter(MessageFilters.USERNAME(message.text().substring(1)), (msg) ->
+        {bot.sendMessage(adminId, "New message from important user: @" + msg.from().username() + "\nText:\n" + msg.text());});
+    }
+
+    public static void main(String[] args) {
+        bot.registerAnyMessagesFilter(MessageFilters.USER_ID(adminId).and(MessageFilters.COMMAND("@")), Test::addNewUser);
+        bot.infinityPolling();
+    }
+}
+```
 # Types
 
 It is a package of gramik.types used in library to parse gramik.types returned by telegram bot api methods.
