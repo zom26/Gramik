@@ -18,6 +18,8 @@ public class MessageFilters {
     public static Predicate<Message> USER_ID(Long userId) {
         return x -> x.from() != null && x.from().id().equals(userId);
     }
-
+    public static Predicate<Message> PATTERN(String pattern) {
+        return x -> x.text().matches(pattern);
+    }
 
 }

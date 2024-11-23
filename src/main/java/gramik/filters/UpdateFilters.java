@@ -13,5 +13,8 @@ public class UpdateFilters {
     public static Predicate<Update> COMMAND(String command) {
         return TEXT_MESSAGE.and(x -> x.message().text().startsWith(command));
     }
+    public static Predicate<Update> PATTERN(String pattern) {
+        return TEXT_MESSAGE.and(x -> x.message().text().matches(pattern));
+    }
 
 }
