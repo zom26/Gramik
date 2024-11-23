@@ -6,8 +6,8 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class FilterContainer {
-    private final FilterArray<Message> messagesFilters = new FilterArray<>(),
-            businessMessagesFilters = new FilterArray<>();
+    private final FilterArray<Message> anyMessagesFilters = new FilterArray<>(), messagesFilters = new FilterArray<>(),
+            businessMessagesFilters = new FilterArray<>(), chanelPostsFilter = new FilterArray<>();
     private final FilterArray<Update> updatesFilters = new FilterArray<>();
 
     void registerMessageFilter(Predicate<Message> filter, Consumer<Message> consumer) {
@@ -22,6 +22,14 @@ public class FilterContainer {
         businessMessagesFilters.add(filter, consumer);
     }
 
+    void registerChanelPostFilter(Predicate<Message> filter, Consumer<Message> consumer) {
+        chanelPostsFilter.add(filter, consumer);
+    }
+
+    void registerAnyMessagesFilter(Predicate<Message> filter, Consumer<Message> consumer) {
+        anyMessagesFilters.add(filter, consumer);
+    }
+
     boolean consume(Update update) {
         return consume(update, false);
     }
@@ -31,7 +39,10 @@ public class FilterContainer {
     }
 
     private boolean consume(Update update, boolean remove) {
-        return update.message() != null && messagesFilters.consume(update.message(), remove) ||
+        return update.message() != null && anyMessagesFilters.consume(update.message(), remove) ||
+                update.businessMessage() != null && anyMessagesFilters.consume(update.businessMessage(), remove) ||
+                update.message() != null && messagesFilters.consume(update.message(), remove) ||
+                update.channelPost() != null && anyMessagesFilters.consume(update.channelPost(), remove) ||
                 update.businessMessage() != null && messagesFilters.consume(update.businessMessage(), remove) ||
                 updatesFilters.consume(update, remove);
     }

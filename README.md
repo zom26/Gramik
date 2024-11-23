@@ -43,7 +43,6 @@ Yes, he is damn, anyway I love him.
 This bot shows how you can use ReplyMarkupKeyboard
 
 ``` java
-
 public class Test {
 
     private static final GramikBot bot = new GramikBot("BotToken");
@@ -104,11 +103,81 @@ public class Test {
         bot.infinityPolling();
     }
 }
-
 ```
 
 In this update I added business connection, but not an example, so imagine it because it works similar as common bot
 chatting.
+
+---
+
+### ReversedPolishEvaluator
+
+It is simple bot witch can evaluate reversed polish expression got by bot or from business connection
+
+``` java
+public class Test {
+
+    private static final GramikBot bot = new GramikBot("7347309134:AAGQrTxUoZBUOQCsaE5_Y_-0PvAdXYbc1wE");
+
+    private static void evaluator(Message message) {
+        BigInteger res = evaluate(message.text());
+        if (res != null) {
+            bot.replyMessage(message, res.toString());
+        }
+    }
+
+    private static boolean isOperation(String token) {
+        return token.equals("+") || token.equals("-") || token.equals("*") || token.equals("/") || token.equals("**") || token.equals("%");
+    }
+
+    private static BigInteger evaluate(String input) {
+        String[] tokens = input.split("\\s+");
+        Deque<BigInteger> stack = new LinkedList<>();
+
+        for (String token : tokens) {
+            if (isOperation(token)) {
+                if (stack.size() < 2) {
+                    return null;
+                }
+                stack.add(switch (token) {
+                    case "+" -> stack.pop().add(stack.pop());
+                    case "-" -> stack.pop().negate().add(stack.pop());
+                    case "*" -> stack.pop().multiply(stack.pop());
+                    case "/" -> {
+                        BigInteger b = stack.pop(), a = stack.pop();
+                        yield a.divide(b);
+                    }
+                    case "%" -> {
+                        BigInteger b = stack.pop(), a = stack.pop();
+                        yield a.remainder(b);
+                    }
+                    case "**" -> {
+                        BigInteger b = stack.pop(), a = stack.pop();
+                        yield a.pow(b.intValue());
+                    }
+                    default -> null;
+                });
+
+            } else if (token.matches("-?\\d+")) {
+                stack.push(new BigInteger(token));
+            } else {
+                return null;
+            }
+        }
+
+        if (stack.size() < 2) {
+            return stack.getFirst();
+        } else {
+            return null;
+        }
+    }
+
+    public static void main(String[] args) {
+        bot.registerAnyMessagesFilter(MessageFilters.ALWAYS, Test::evaluator);
+        bot.infinityPolling();
+    }
+}
+```
 
 # Types
 

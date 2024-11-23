@@ -62,6 +62,10 @@ public class GramikBot {
         this.filters.registerUpdateFilter(filter, consumer);
     }
 
+    public void registerChanelPostFilter(Predicate<Message> filter, Consumer<Message> consumer) {
+        this.filters.registerChanelPostFilter(filter, consumer);
+    }
+
     public void registerMessageOneTimeFilter(Predicate<Message> filter, Consumer<Message> consumer) {
         this.oneTimeFilters.registerMessageFilter(filter, consumer);
     }
@@ -70,8 +74,20 @@ public class GramikBot {
         this.oneTimeFilters.registerBusinessMessageFilter(filter, consumer);
     }
 
+    public void registerAnyMessagesFilter(Predicate<Message> filter, Consumer<Message> consumer) {
+        this.filters.registerAnyMessagesFilter(filter, consumer);
+    }
+
     public void registerOneTimeFilter(Predicate<Update> filter, Consumer<Update> consumer) {
         this.oneTimeFilters.registerUpdateFilter(filter, consumer);
+    }
+
+    public void registerOneTimeAnyMessagesFilter(Predicate<Message> filter, Consumer<Message> consumer) {
+        this.oneTimeFilters.registerAnyMessagesFilter(filter, consumer);
+    }
+
+    public void registerOneTimeChanelPostFilter(Predicate<Message> filter, Consumer<Message> consumer) {
+        this.oneTimeFilters.registerChanelPostFilter(filter, consumer);
     }
 
     public Update[] getUpdates() {
@@ -101,18 +117,28 @@ public class GramikBot {
     }
 
     public void sendMessage(long chatId, String text) {
-        sendMessage(chatId, text, null, null);
+        sendMessage(chatId, text, null, null, null, null);
     }
 
     public void sendMessage(long chatId, String text, ParseMode mode) {
-        sendMessage(chatId, text, mode, null);
+        sendMessage(chatId, text, mode, null, null, null);
     }
 
     public void sendMessage(long chatId, String text, ReplyMarkup replyMarkup) {
-        sendMessage(chatId, text, null, replyMarkup);
+        sendMessage(chatId, text, null, replyMarkup, null, null);
     }
 
-    public void sendMessage(long chatId, String text, ParseMode mode, ReplyMarkup replyMarkup) {
+    public void replyMessage(Message message, String text) {
+        if (message.businessConnectionId() == null) {
+            sendMessage(message.chat().id(), text, null, null,
+                    new ReplyParameters(message.messageId(), null, null, null, null, null, null), null);
+        } else {
+            sendMessage(message.chat().id(), text, null, null,
+                    new ReplyParameters(message.messageId(), null, null, null, null, null, null), message.businessConnectionId());
+        }
+    }
+
+    public void sendMessage(long chatId, String text, ParseMode mode, ReplyMarkup replyMarkup, ReplyParameters replyParameters, String businessConnectionId) {
         try {
             ObjectNode jsonToSend = objectMapper.createObjectNode()
                     .put("chat_id", chatId)
@@ -122,6 +148,12 @@ public class GramikBot {
             }
             if (replyMarkup != null) {
                 jsonToSend.put("reply_markup", replyMarkup.toJson());
+            }
+            if (replyParameters != null) {
+                jsonToSend.put("reply_parameters", objectMapper.valueToTree(replyParameters));
+            }
+            if (businessConnectionId != null) {
+                jsonToSend.put("business_connection_id", businessConnectionId);
             }
 
             HttpClient client = HttpClient.newHttpClient();
